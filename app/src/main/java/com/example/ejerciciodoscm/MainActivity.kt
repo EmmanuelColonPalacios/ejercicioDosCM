@@ -1,3 +1,5 @@
+package com.example.ejerciciodoscm
+
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -6,11 +8,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.ejerciciodoscm.databinding.ActivityMainBinding
+import com.example.ejerciciodoscm.databinding.ItemCharacterBinding
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import com.example.ejerciciodoscm.CharacterAdapter
+import com.example.ejerciciodoscm.AvatarApiService
+import com.example.ejerciciodoscm.AvatarApiClient
+import com.example.ejerciciodoscm.Character
+import com.example.ejerciciodoscm.R
+import com.example.ejerciciodoscm.CharacterDetailActivity
 
-class MainActivity : AppCompatActivity(), CharacterAdapter.OnItemClickListener {
+class MainActivity : ComponentActivity(), CharacterAdapter.OnItemClickListener {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var characterAdapter: CharacterAdapter
@@ -21,24 +30,24 @@ class MainActivity : AppCompatActivity(), CharacterAdapter.OnItemClickListener {
 
         // Configurar splash screen
         val splashScreen = installSplashScreen()
-        splashScreen.setOnExitAnimationListener {
+        splashScreen.setOnExitAnimationListener { splashScreenView ->
             // Splash screen
-            setContentView(R.layout.activity_main) // Inflar layout después del splash
             setupViews()
             getCharacters()
         }
     }
 
     private fun setupViews() {
+        // Inflar layout principal
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         // Inicializar Retrofit y la API service
-        apiService = AvatarApiClient.create()
+        apiService = AvatarApiClient.service
 
         // Configurar RecyclerView
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        characterAdapter = CharacterAdapter(emptyList(), this)
+        characterAdapter = CharacterAdapter(this)
         binding.recyclerView.adapter = characterAdapter
     }
 
@@ -48,8 +57,7 @@ class MainActivity : AppCompatActivity(), CharacterAdapter.OnItemClickListener {
                 if (response.isSuccessful) {
                     val characters = response.body()
                     characters?.let {
-                        characterAdapter = CharacterAdapter(it, this@MainActivity)
-                        binding.recyclerView.adapter = characterAdapter
+                        characterAdapter.submitList(it)
                     }
                 } else {
                     Toast.makeText(this@MainActivity, "Error al obtener los personajes", Toast.LENGTH_SHORT).show()
@@ -63,7 +71,7 @@ class MainActivity : AppCompatActivity(), CharacterAdapter.OnItemClickListener {
     }
 
     override fun onItemClick(character: Character) {
-        val intent = Intent(this, CharacterDetailActivity::class.java).apply {
+        val intent = Intent(this, Character::class.java).apply {
             putExtra("character_id", character.id)
         }
         startActivity(intent)
